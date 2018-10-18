@@ -8,6 +8,8 @@ output:
     toc: true
     toc_float:
       collapsed: false
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, include=FALSE}
@@ -49,6 +51,8 @@ readCount
 d <- data.frame(navn = names(readCount),read = as.numeric(readCount))
 d <- separate(d, navn, into=c('dosage', 'replicate'), sep= "-", remove = FALSE)
 
+#colsum(d)
+
 ```
 
 ```{r}
@@ -58,7 +62,24 @@ library(ggplot2)
 ggplot(d,aes(x=navn,y=read,fill = dosage)) + geom_bar(stat="identity") + scale_fill_manual(values = samplecols)
 ```
 
+##Hvor mange gener har 0 (dvs ikke målbart genuttrykk) i minst en behandling?
+
 ```{r}
-lager en liten endring 
+
+library(dplyr
+        )
+Stack_col <- gather(data=Aksel, key= sample, value = uttrykk, -geneID) %>% group_by(geneID) %>% summarise(zeroTPM=  sum(uttrykk == 0))
+
+table(Stack_col$zeroTPM)
+
+mytable <- table(Stack_col$zeroTPM) 
+
+sum(mytable[2:21]) #Hvor mange gener har 0 (dvs ikke målbart genuttrykk) i minst en behandling?  
+sum(mytable[21])#Hvor mange gener har 0 i alle behandlinger?
+
+#Om gener der det finnes få eller ingen data på genets reads kan vi enten forstå det sånn at genet ikke blir påvirket av stråling eller ikke er skrudd på. Det kan også være at genmengden som ble sekvensert ikke var tilstrekkelig for å få en full lesning, og genet blir dermed regnet som ikke påvirket
 ```
+
+##1.5 Normalisering av genuttrykksdata for variable datamengder per prøve (antall reads)
+
 
