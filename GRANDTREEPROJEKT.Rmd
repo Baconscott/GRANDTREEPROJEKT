@@ -1,9 +1,4 @@
 ---
-title: "Untitled"
-author: "Benjamin Johan Madsen & Aksel Vardeberg Skeie"
-date: "18 oktober 2018"
-output: html_document
----
 title: "STIN100 Datasett 2: Analyse av genuttrykk for å forstå effektene av gammastråling på gran"
 author: "Benjamin Johan Madsen & Aksel Vardeberg Skeie"
 date: "16 oktober 2018"
@@ -64,6 +59,6 @@ ggplot(d,aes(x=navn,y=read,fill = dosage)) + geom_bar(stat="identity") + scale_f
 ```
 
 ```{r}
-
+lager en liten endring 
 ```
 
