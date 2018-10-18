@@ -1,0 +1,69 @@
+---
+title: "Untitled"
+author: "Benjamin Johan Madsen & Aksel Vardeberg Skeie"
+date: "18 oktober 2018"
+output: html_document
+---
+title: "STIN100 Datasett 2: Analyse av genuttrykk for å forstå effektene av gammastråling på gran"
+author: "Benjamin Johan Madsen & Aksel Vardeberg Skeie"
+date: "16 oktober 2018"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+---
+
+```{r, include=FALSE}
+#Kjørte disse linjene for å gjør øvelsen litt vanskligere og mer innteresant.
+
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("DESeq2")
+```
+
+```{r, include=FALSE}
+library(readr)
+Aksel <- readr::read_tsv("gene_expression_readcounts.tsv")
+head(Aksel)
+
+View(Aksel)
+```
+
+##1. Hvor mange rader (gener) og kolonner (prøver) har vi i tabellen?
+
+Vi bruker funskjonene ```nrow``` og ```ncol``` for å telle opp antall rader og kolonner. Det er 21 rader og 66069 rader i tabellen *gene_expression_readcounts.tsv.*  
+```{r,}
+Antall_rader <- nrow(Aksel)
+Antall_kolonner <- ncol(Aksel)
+```
+
+##2. Skriv en kode som teller hvor mange replikater vi har per behandling (dvs stråledose) basert på kolonnenavnene?
+
+```{r}
+library(tidyr)
+
+separate(Aksel, geneID, into=c('dosage', 'replicate'), sep= "-", remove = TRUE, convert = FALSE)
+```
+
+##Bruk ggplot() + geom_bar(stat="identity") til å visualisere antall RNAseq reads vi har sekvensert for hver prøve i hver behandling.
+```{r}
+readCount <- colSums(Aksel[,-1])
+readCount
+
+d <- data.frame(navn = names(readCount),read = as.numeric(readCount))
+d <- separate(d, navn, into=c('dosage', 'replicate'), sep= "-", remove = FALSE)
+
+```
+
+```{r}
+samplecols = c(G0="lightgrey", G1="grey", G10="darkgrey", G40="red", G100="darkred")
+
+library(ggplot2)
+ggplot(d,aes(x=navn,y=read,fill = dosage)) + geom_bar(stat="identity") + scale_fill_manual(values = samplecols)
+```
+
+```{r}
+
+```
+
