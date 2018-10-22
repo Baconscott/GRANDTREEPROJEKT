@@ -27,59 +27,112 @@ head(Aksel)
 View(Aksel)
 ```
 
-##1. Hvor mange rader (gener) og kolonner (prøver) har vi i tabellen?
+##1.4 Del 1: utforskning av data
+
+##1.4.1 Hvor mange rader (gener) og kolonner (prøver) har vi i tabellen?
 
 Vi bruker funskjonene ```nrow``` og ```ncol``` for å telle opp antall rader og kolonner. Det er 21 rader og 66069 rader i tabellen *gene_expression_readcounts.tsv.*  
 ```{r,}
+#Dette svarer på spørsmål 1
+
 Antall_rader <- nrow(Aksel)
 Antall_kolonner <- ncol(Aksel)
 ```
 
-##2. Skriv en kode som teller hvor mange replikater vi har per behandling (dvs stråledose) basert på kolonnenavnene?
+##1.4.2 Skriv en kode som teller hvor mange replikater vi har per behandling (dvs stråledose) basert på kolonnenavnene?
 
 ```{r}
 library(tidyr)
-
-separate(Aksel, geneID, into=c('dosage', 'replicate'), sep= "-", remove = TRUE, convert = FALSE)
-```
-
-##Bruk ggplot() + geom_bar(stat="identity") til å visualisere antall RNAseq reads vi har sekvensert for hver prøve i hver behandling.
-```{r}
+#Dette svarer på spørsmål 2
 readCount <- colSums(Aksel[,-1])
-readCount
 
 d <- data.frame(navn = names(readCount),read = as.numeric(readCount))
 d <- separate(d, navn, into=c('dosage', 'replicate'), sep= "-", remove = FALSE)
 
-#colsum(d)
-
+max(d$replicate, na.rm = TRUE)
 ```
 
+##1.4.3 Bruk ggplot() + geom_bar(stat="identity") til å visualisere antall RNAseq reads vi har sekvensert for hver prøve i hver behandling.
 ```{r}
+#Dette svarer på spørsmål 3, readcount har ingen funksjon
+
+readCount <- colSums(Aksel[,-1])
+readCount
+
 samplecols = c(G0="lightgrey", G1="grey", G10="darkgrey", G40="red", G100="darkred")
 
 library(ggplot2)
 ggplot(d,aes(x=navn,y=read,fill = dosage)) + geom_bar(stat="identity") + scale_fill_manual(values = samplecols)
 ```
 
-##Hvor mange gener har 0 (dvs ikke målbart genuttrykk) i minst en behandling?
+##1.4.4 Hvor mange gener har 0 (dvs ikke målbart genuttrykk) i minst en behandling?
 
 ```{r}
+#Dette svarer på spørsmål 4
 
-library(dplyr
-        )
+library(dplyr)
+
 Stack_col <- gather(data=Aksel, key= sample, value = uttrykk, -geneID) %>% group_by(geneID) %>% summarise(zeroTPM=  sum(uttrykk == 0))
-
-table(Stack_col$zeroTPM)
 
 mytable <- table(Stack_col$zeroTPM) 
 
 sum(mytable[2:21]) #Hvor mange gener har 0 (dvs ikke målbart genuttrykk) i minst en behandling?  
-sum(mytable[21])#Hvor mange gener har 0 i alle behandlinger?
-
-#Om gener der det finnes få eller ingen data på genets reads kan vi enten forstå det sånn at genet ikke blir påvirket av stråling eller ikke er skrudd på. Det kan også være at genmengden som ble sekvensert ikke var tilstrekkelig for å få en full lesning, og genet blir dermed regnet som ikke påvirket
 ```
+
+##1.4.5 Hvor mange gener har 0 i alle behandlinger?
+
+```{r}
+#Dette svarer på spørsmål 5
+
+sum(mytable[21])#Hvor mange gener har 0 i alle behandlinger?
+```
+
+##1.4.6 Hva slags biologiske tolkninger kan vi gjøre om gener vi ikke kan måle genuttrykket til? 
+
+Om gener der det finnes få eller ingen data på genets reads kan vi enten forstå det sånn at genet ikke blir påvirket av stråling eller ikke er skrudd på. Det kan også være at genmengden som ble sekvensert ikke var tilstrekkelig for å få en full lesning, og genet blir dermed regnet som ikke påvirket
+
 
 ##1.5 Normalisering av genuttrykksdata for variable datamengder per prøve (antall reads)
 
+##1.5.1.1 Hva er det høyest målte genuttrykket vi har i tabellen med normaliserte data? (hvilket gen?)
+
+```{r}
+genuttrykkTPM <- readr::read_tsv("gene_expression_TPM.tsv")
+
+library(tidyverse)
+
+d.tidy <- genuttrykkTPM %>% 
+  as_tibble %>% 
+  gather(kolonne, tpm, -geneID) %>% 
+  separate(kolonne, sep = '-' , into = c("dose", "rep")) %>% 
+  mutate(dose = dose %>% str_sub(2) %>% as.numeric)
+
+d.tidy[which.max(d.tidy$tpm),]
+```
+
+Vi kan se her at *MA_183668g0010* er det høyest målete genutrykket.  
+
+##1.5.2.1 Hva er gjennomsnittet/median av genuttrykk i tabellen?
+```{r}
+mean(d.tidy$tpm)
+```
+
+Dette er genomsnittsverdien av genuttrykk i tabellen.
+
+##1.5.3.1 Bruk geom_histogram til å visualisere fordelingen av genuttrykksnivå 
+
+```{r}
+
+ggplot(data=d.tidy, aes(d.tidy$tpm)) + 
+  geom_histogram()+ scale_x_log10() 
+
+ggplot(d.tidy, aes(log2(d.tidy$tpm))) + geom_histogram()
+
+#må se nærmere på denne, dette kan ikke stemme?
+```
+
+##1.6 Del 2. Kvalitetskontroll av data
+```{r}
+#Lykke til videre <3, men les komentaren på 1.5.3.1
+```
 
