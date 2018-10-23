@@ -132,5 +132,20 @@ ggplot(d.tidy, aes(log2(tpm+1))) + geom_histogram()
 ##1.6 Del 2. Kvalitetskontroll av data
 ```{r}
 #Lykke til videre <3, men les komentaren på 1.5.3.1
+
+```
+
+##1.6.1 PCA
+```{r}
+#1. Transformer genutrykkTPM til en matris 
+
+genuttrykkTPM_matriks <- data.matrix(genuttrykkTPM[,-1], rownames.force = NA)
+genuttrykkTPM_matriks
+
+#2. Log transormer genutrykkTPM
+genuttrykkTPM_matriks_log2 <- log2(genuttrykkTPM_matriks)
+genuttrykkTPM_matriks_log2
+
+#3. Bruk "prcomp" og lagre resultatet som i object som heter "pca" 
 ```
 
