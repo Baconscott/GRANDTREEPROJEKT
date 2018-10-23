@@ -122,13 +122,11 @@ Dette er genomsnittsverdien av genuttrykk i tabellen.
 ##1.5.3.1 Bruk geom_histogram til å visualisere fordelingen av genuttrykksnivå 
 
 ```{r}
+library(ggplot2)
 
-ggplot(data=d.tidy, aes(d.tidy$tpm)) + 
-  geom_histogram()+ scale_x_log10() 
+ggplot(d.tidy, aes(log2(tpm+1))) + geom_histogram() 
 
-ggplot(d.tidy, aes(log2(d.tidy$tpm))) + geom_histogram()
-
-#må se nærmere på denne, dette kan ikke stemme?
+#legger til pluss en til alle veridene for å få med 0 veridene. På x-aksen ser man verdien kolonnen har mens på y aksen ser man antall celler i colonnen tpm som har den verdien. Ignorer bin-width 
 ```
 
 ##1.6 Del 2. Kvalitetskontroll av data
