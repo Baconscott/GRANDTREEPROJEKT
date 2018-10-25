@@ -99,6 +99,8 @@ Om gener der det finnes få eller ingen data på genets reads kan vi enten forst
 ```{r}
 genuttrykkTPM <- readr::read_tsv("gene_expression_TPM.tsv")
 
+View(genuttrykkTPM)
+
 library(tidyverse)
 
 d.tidy <- genuttrykkTPM %>% 
@@ -108,6 +110,7 @@ d.tidy <- genuttrykkTPM %>%
   mutate(dose = dose %>% str_sub(2) %>% as.numeric)
 
 d.tidy[which.max(d.tidy$tpm),]
+View(d.tidy)
 ```
 
 Vi kan se her at *MA_183668g0010* er det høyest målete genutrykket.  
@@ -130,22 +133,91 @@ ggplot(d.tidy, aes(log2(tpm+1))) + geom_histogram()
 ```
 
 ##1.6 Del 2. Kvalitetskontroll av data
-```{r}
-#Lykke til videre <3, men les komentaren på 1.5.3.1
-
-```
 
 ##1.6.1 PCA
 ```{r}
 #1. Transformer genutrykkTPM til en matris 
-
 genuttrykkTPM_matriks <- data.matrix(genuttrykkTPM[,-1], rownames.force = NA)
-genuttrykkTPM_matriks
 
-#2. Log transormer genutrykkTPM
-genuttrykkTPM_matriks_log2 <- log2(genuttrykkTPM_matriks)
-genuttrykkTPM_matriks_log2
+#2. Log transformer genutrykkTPM
+genuttrykkTPM_matriks_log2 <- log2(genuttrykkTPM_matriks+1)
 
 #3. Bruk "prcomp" og lagre resultatet som i object som heter "pca" 
+pca <- prcomp(t(genuttrykkTPM_matriks_log2))
+
+percentVar <- pca$sdev^2/sum(pca$sdev^2)
+
+library(tidyverse) 
+sampleMeta <-   tibble(sampleID = colnames(genuttrykkTPM)[-1]) %>%
+  separate(sampleID, c("dosage", "replicate"), sep="-", remove = F) %>%
+  mutate(dosage=factor(dosage, levels = unique(dosage)))
+
+pcaTbl <-
+  as_tibble(pca$x[,1:2]) %>%
+  mutate(sampleID=rownames(pca$x)) %>%
+  left_join(sampleMeta, by="sampleID")
+write_tsv(pcaTbl,"pcaTbl.tsv")
+
+pcaTbl <- read.table("pcaTbl.tsv", header = TRUE, check.names = FALSE, stringsAsFactors = FALSE)
+radiationColor <- c(G0="#000000",G1="#1b9b07",G10="#dbd700",G40="#ff9d00",G100="#ff0000")
+radiationLabels <- c(G0="0mGy",G1="1mGy",G10="10mGy",G40="40mGy",G100="100mGy")
+
+library(ggrepel); library(ggplot2)
+ggplot(pcaTbl, aes(x=PC1,y=PC2,color=dosage, label=sampleID)) +
+  xlab(paste0('PC1 (', round(percentVar[1], 2)*100, '% of variance)')) +
+  ylab(paste0('PC2 (', round(percentVar[2], 2)*100, '% of variance)')) +
+  geom_point() +
+  geom_text_repel() + # krever ggrepel pakken
+  scale_color_manual(values = radiationColor,labels = radiationLabels) +
+  theme_bw()
+```
+
+##1.6.2 Klyngeanalyse med heatmap
+```{r}
+library(dplyr)
+library(tidyverse)
+genuttrykk_varians <- genuttrykkTPM %>%
+  gather(Sample, Uttrykk, -1) %>%
+  group_by(geneID) %>%
+  summarise(Varians = var(log(1+Uttrykk))) %>%
+  arrange(desc(Varians)) %>% 
+  top_n(n = 5000, wt = Varians) -> genuttrykk_varians_5000
+
+data.for.heatmap <- filter(genuttrykkTPM, geneID %in% genuttrykk_varians_5000$geneID) #Nå har vi endelig dataen vi skal jobbe med. 
+
+data.for.heatmap.matrix <- data.matrix(data.for.heatmap[,-1], rownames.force = NA) #Gjør det om til en matrix og fjerner kolonnen for geneID ettersom den er ikke numerisk 
+
+data.for.heatmap.matrix.log <- log(data.for.heatmap.matrix + 1) #Log transformer genutrykkTPM
+
+data.for.heatmap.matrix.log.scaled <- scale(data.for.heatmap.matrix.log, center = TRUE, scale = TRUE) #skalerer det.
+
+dist.var <- dist(t(data.for.heatmap.matrix.log.scaled)) #Beregn distanser mellom variablene etter skalering, dermed kan vi se vekk i fra korelasjon. 
+
+#likhetstre for kolonnene 
+
+dist.var.tre <- hclust(dist.var) #Vi kan visualisere likhetene i et tre. 
+plot(dist.var.tre) #plotter likheten med funksjonen "plot"
+
+#likhetstre for radene 
+
+dist.obs <- dist(data.for.heatmap.matrix.log.scaled)
+dist.obs.tre <- hclust(dist.obs)
+plot(dist.obs.tre) #Prøv å fjern navnene på radene. 
+
+#Sett sammen trærene for å lage et heat map 
+library(ggplot2)
+
+heatmap.2(x = data.for.heatmap.matrix.log.scaled, 
+          Rowv = as.dendrogram(dist.obs.tre),
+          Colv = as.dendrogram(dist.var.tre),
+          trace = "none",
+          col = colorRampPalette(c("blue","white","red")),
+          cexCol = 1,
+          srtCol = 45,
+          cexRow = 0.5,
+          margins = c(7,3)
+)
+
+
 ```
 
