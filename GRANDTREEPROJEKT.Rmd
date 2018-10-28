@@ -215,9 +215,6 @@ heatmap.2(x = data.for.heatmap.matrix.log.scaled,
           cexCol = 1,
           srtCol = 45,
           cexRow = 0.5,
-          margins = c(7,3)
-)
-
-
+          margins = c(7,3))
 ```
 
